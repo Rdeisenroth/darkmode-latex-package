@@ -28,10 +28,13 @@
 \hypersetup{
     hidelinks,
 }
-\usepackage[enable]{darkmode}
+\usepackage{etoolbox}
+% \usepackage[enable]{darkmode}
 \EnableCrossrefs
 \CodelineIndex
 \RecordChanges
+\setlength{\parindent}{0pt}
+%\setlength{\parskip}{1em}%
 \begin{document}
 \DocInput{darkmode.dtx}
 \end{document}
@@ -52,8 +55,43 @@
 % \subsection{Why}
 % Now you might think: Why would anyone even need to use a dark mode for PDF files?\\ While for the common task of printing a dark mode has a lot of disadvantages and would take a lot of ink, theese days it becomes more and more common to view PDF files directly on a Screen. And Screens emit a lot of Blue light, which - especially in the evening - can be really annoying to stare at when working on a large text document. Also modern displays can get so bright that a stark black and white contrast is too strong for most lighting scenarios.
 % \section{Usage}
+
 % \subsection{Basic usage}
-% \begin{function}{\IfDarkModeT,\IfDarkModeF,\IfDarkModeTF}
+% The basic Idea behind this package is that the dark mode is enabled in the preamble once, either by passing the package option \verb+enable+ or via the command \tn{enabledarkmode}, and applies to the rest of the document. 
+% \subsection{Adopting the Darkmode}
+% When defining custom colors and commands, we can check if the dark mode is active or not to dynamically adjust the Colors.\par
+% Example: \begin{verbatim}
+% \DeclareDocumentCommand{\bluecode}{m}{%
+%     \texttt{\textcolor{\IfDarkModeTF{cyan}{blue}}{#1}}%
+% }
+% \end{verbatim}
+% Note that in most scenarios it is possible to use the \tn{IfDarkModeTF} command inline without any sideeffects. If cases where this doesn't work, an alternative is to wrap the entire definition of a macro in the switch:
+% \begin{verbatim}
+% \IfDarkModeTF{%
+%     \definecolor{accentcolor}{RGB}{0, 157, 129}%
+% }{%
+%     \definecolor{accentcolor}{RGB}{0, 122, 93}%
+% }
+% \end{verbatim} 
+% Another usefull trick is the usage of the colors \cs{thepagecolor} from the \pkg{pagecolor}-Package and the color \texttt{fgcolor} which is defined to the default font color. You can mix any color with these two colors to easily derive fitting colors:
+\begin{verbatim}
+% % Fancy Altering Table Row Colors
+% \rowcolors{2}{\thepagecolor}{fgcolor!10!\thepagecolor}
+\end{verbatim}
+Note that \verb+yellow!10!\thepagecolor+ is not the same as \verb+yellow!10+ because the second one would just default to \verb+yellow!10!white+.
+% \section{Detailed documentation}
+% \subsection{Package options}
+% There following options can be passed to the package:
+% \begin{itemize}
+%    \item \texttt{enable} - boolean input, enables or disables the dark mode for the entire document
+% \item \texttt{defaulthook} - boolean input, whether to enable or disable the default hook (\tn{@darkmode@on@enable} or \tn{\@darkmode@on@disable})
+% \item \texttt{nodefaulthook} - meta key for disabeling the default hook
+%\end{itemize}
+% \subsection{User Commands}
+% \begin{function}{\enabledarkmode,\disabledarkmode}
+%    \tn{enabledarkmode} enables the dark Mode at the current position, while \tn{disabledarkmode} disables the dark mode at the current position.\\\textbf{Note:} that this is only intended to be used in the preamble for an entire document mainly with a CI/CD. Trying to toggle the dark mode between different pages may lead to unexpected behavior and is not recommended. For regular use to pass the \emph{enabled} option to the package.
+% \end{function}
+% \begin{function}[EXP]{\IfDarkModeT,\IfDarkModeF,\IfDarkModeTF}
 %    \begin{syntax}
 %        \tn{IfDarkModeT} \Arg{true code}
 %        \tn{IfDarkModeF} \Arg{false code}
@@ -61,17 +99,13 @@
 %    \end{syntax}
 %    Checks whether the dark mode is enabled or not. If so, \meta{true code} is executed, otherwise \meta{false code} is executed. These macros are fully expandable.
 % \end{function}
-%
-% \begin{function}{\enabledarkmode,\disabledarkmode}
-%    \tn{enabledarkmode} enables the dark Mode at the current position, while \tn{disabledarkmode} disables the dark mode at the current position. Note that this is only intended to switch for a full page. It is \emph{not} intended to be used in environments like minipage...
-% \end{function}
-% \subsection{Adopting the Darkmode}
+% \subsection{Commands for developers}
 % This functionality is mostly aimed at package developers and template creators, for the end user it should not be necessary to manually fixup the Switching with compatible Packages and Classes.
-% \begin{function}{\@darkmode@on@enable,\@darkmode@on@disable}
-%      The default hooks for toggling the dark mode. These internal functions should only be overwritten by class files that require rather used when overwriding \tn{enabledarkmode} or the \tn{disabledarkmode} command.
+% \begin{function}[added = 2022-08-30]{\@darkmode@set@enabled,\@darkmode@set@disabled}
+%      Functions for template developers that want to implement dark mode toggling with \LaTeXe{}.
 % \end{function}
 % \end{documentation}
-%
+% \clearpage
 % \begin{implementation}
 %     \section{implementation}
 % \begin{variable}{\g_@@_dark_mode_bool}
@@ -81,6 +115,10 @@
     enable .bool_gset:N = \g_@@_dark_mode_bool,
     enable .initial:n = false,
     enable .default:n = true,
+    defaulthook .bool_gset:N = \g_@@_dark_mode_hook_bool,
+    defaulthook .initial:n = true
+    defaulthook .default:n = true
+    nodefaulthook .meta:n = {defaulthook=false},
 }
 %    \end{macrocode}
 %   Now we process the package options.
@@ -121,7 +159,7 @@
 }
 \DeclareDocumentCommand{\enabledarkmode}{}{
     \@darkmode@set@enabled
-    \@darkmode@on@enable
+    \bool_if:cT {g_@@_dark_mode_hook_bool} {\@darkmode@on@enable}
 }
 %    \end{macrocode}
 % \end{macro}
@@ -137,7 +175,7 @@
 }
 \DeclareDocumentCommand{\disabledarkmode}{}{
     \@darkmode@set@disabled
-    \@darkmode@on@disable
+    \bool_if:cT {g_@@_dark_mode_hook_bool} {\@darkmode@on@disable}
 }
 %    \end{macrocode}
 % \end{macro}
