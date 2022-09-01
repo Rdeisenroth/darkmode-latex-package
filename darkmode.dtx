@@ -13,13 +13,12 @@
 % LaTeX version 2005/12/01 or later.
 %
 % \fi
-
+%
 % \iffalse
 %<package>\NeedsTeXFormat{LaTeX2e}[2005/12/01]
 %<package>\RequirePackage{expl3,l3keys2e}
 %<package>\ProvidesExplPackage {darkmode} {2022-08-30} {1.0}
 %<package>{Provide general dark mode support for any LaTeX document.}
-%<package>\RequirePackage{pagecolor}
 %
 %<*driver>
 \documentclass{l3doc}
@@ -27,7 +26,7 @@
     hidelinks,
 }
 \usepackage{etoolbox}
-% \usepackage[enable]{darkmode}
+\usepackage{darkmode}
 \EnableCrossrefs
 \CodelineIndex
 \RecordChanges
@@ -72,11 +71,11 @@
 % }
 % \end{verbatim} 
 % Another usefull trick is the usage of the colors \cs{thepagecolor} from the \pkg{pagecolor}-Package and the color \texttt{fgcolor} which is defined to the default font color. You can mix any color with these two colors to easily derive fitting colors:
-\begin{verbatim}
+% \begin{verbatim}
 % % Fancy Altering Table Row Colors
 % \rowcolors{2}{\thepagecolor}{fgcolor!10!\thepagecolor}
-\end{verbatim}
-Note that \verb+yellow!10!\thepagecolor+ is not the same as \verb+yellow!10+ because the second one would just default to \verb+yellow!10!white+.
+% \end{verbatim}
+% Note that \verb+yellow!10!\thepagecolor+ is not the same as \verb+yellow!10+ because the second one would just default to \verb+yellow!10!white+.
 % \section{Detailed documentation}
 % \subsection{Package options}
 % There following options can be passed to the package:
@@ -109,13 +108,14 @@ Note that \verb+yellow!10!\thepagecolor+ is not the same as \verb+yellow!10+ bec
 % \begin{variable}{\g_@@_dark_mode_bool}
 %    First we define the package Options. The usage of initial ensures that the boolean \cs{g_@@_dark_mode_bool} always exists.
 %    \begin{macrocode}
+\RequirePackage{xcolor,pagecolor}
 \keys_define:nn {darkmode} {
     enable .bool_gset:N = \g_@@_dark_mode_bool,
     enable .initial:n = false,
     enable .default:n = true,
     defaulthook .bool_gset:N = \g_@@_dark_mode_hook_bool,
-    defaulthook .initial:n = true
-    defaulthook .default:n = true
+    defaulthook .initial:n = true,
+    defaulthook .default:n = true,
     nodefaulthook .meta:n = {defaulthook=false},
 }
 %    \end{macrocode}
